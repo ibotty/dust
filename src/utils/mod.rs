@@ -4,6 +4,9 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
+use dashmap::DashMap;
+use dashmap::DashSet;
+
 use channel::Receiver;
 use std::thread::JoinHandle;
 
@@ -279,9 +282,13 @@ pub fn sort_by_size_first_name_second(a: &(PathBuf, u64), b: &(PathBuf, u64)) ->
         result
     }
 }
+use std::iter::FromIterator;
 
-pub fn sort(data: HashMap<PathBuf, u64>) -> Vec<(PathBuf, u64)> {
-    let mut new_l: Vec<(PathBuf, u64)> = data.iter().map(|(a, b)| (a.clone(), *b)).collect();
+pub fn sort(data: DashMap<PathBuf, u64>) -> Vec<(PathBuf, u64)> {
+    // let mut new_l: Vec<(&PathBuf, &u64)> = data.iter().map(|r| (r.key(), r.value())).collect();
+    // want to move here instead of cloning:
+    let mut new_l : Vec<(PathBuf, u64)> 
+        = Vec::from_iter(data.iter_mut().map(|r| (r.key().clone(), *r.value()) ));
     new_l.sort_unstable_by(sort_by_size_first_name_second);
     new_l
 }
@@ -377,7 +384,7 @@ mod tests {
 
     #[test]
     fn test_should_ignore_file() {
-        let mut files = HashSet::new();
+        let mut files = DashSet::new();
         files.insert((10, 20));
 
         assert!(!should_ignore_file(true, &mut files, Some((0, 0))));
@@ -392,7 +399,7 @@ mod tests {
 
     #[test]
     fn test_should_ignore_file_on_different_device() {
-        let mut files = HashSet::new();
+        let mut files = DashSet::new();
         files.insert((10, 20));
 
         // We do not ignore files on the same device
