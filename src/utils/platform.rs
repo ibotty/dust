@@ -4,6 +4,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+use jwalk::ClientState;
+
 #[cfg(target_family = "unix")]
 fn get_block_size() -> u64 {
     // All os specific implementations of MetatdataExt seem to define a block as 512 bytes
@@ -12,15 +14,20 @@ fn get_block_size() -> u64 {
 }
 
 #[cfg(target_family = "unix")]
-pub fn get_metadata(d: &DirEntry, use_apparent_size: bool) -> Option<(u64, Option<(u64, u64)>)> {
+pub fn get_metadata<C : ClientState>(
+        d: &DirEntry<C>,
+        use_apparent_size: bool) 
+    -> Option<(u64, Option<(u64, u64)>)> {
+
     use std::os::unix::fs::MetadataExt;
-    d.metadata.as_ref().unwrap().as_ref().ok().map(|md| {
+    let md = d.metadata().unwrap();
+    // d.metadata().as_ref().unwrap().as_ref().ok().map(|md| {
         if use_apparent_size {
-            (md.len(), Some((md.ino(), md.dev())))
+            Some((md.len(), Some((md.ino(), md.dev()))))
         } else {
-            (md.blocks() * get_block_size(), Some((md.ino(), md.dev())))
+            Some((md.blocks() * get_block_size(), Some((md.ino(), md.dev()))))
         }
-    })
+    // })
 }
 
 #[cfg(target_family = "windows")]

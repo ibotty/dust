@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use jwalk::WalkDir;
+use jwalk::ClientState;
 
 mod platform;
 use self::platform::*;
@@ -138,10 +139,10 @@ fn examine_dir<P: AsRef<Path>>(
     let top_dir = top_dir.as_ref();
     let mut inodes: HashSet<(u64, u64)> = HashSet::new();
     let mut iter = WalkDir::new(top_dir)
-        .preload_metadata(true)
+        // .preload_metadata(true)
         .skip_hidden(false);
     if let Some(threads_to_start) = threads {
-        iter = iter.num_threads(threads_to_start);
+        // iter = iter.num_threads(threads_to_start);
     }
 
     'entry: for entry in iter {
@@ -205,11 +206,11 @@ fn should_ignore_file(
         }
     }
 }
-
-fn process_file_with_size_and_inode<P: AsRef<Path>>(
+// ClientState<ReadDirState=u64, DirEntryState=u64>>,
+fn process_file_with_size_and_inode<P: AsRef<Path>, C:ClientState>(
     top_dir: P,
     data: &mut HashMap<PathBuf, u64>,
-    e: DirEntry,
+    e: DirEntry<C>,
     size: u64,
 ) {
     let top_dir = top_dir.as_ref();
